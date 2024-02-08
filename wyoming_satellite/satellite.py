@@ -789,7 +789,9 @@ class SatelliteBase:
     async def trigger_played(self) -> None:
         """Called when audio stopped playing"""
         await run_event_command(self.settings.event.played)
-        await self.forward_event(Played().event())
+        event = Played().event()
+        await self.forward_event(event)
+        await self.event_to_server(event)
 
     async def trigger_transcript(self, transcript: Transcript) -> None:
         """Called when speech-to-text text is received."""
