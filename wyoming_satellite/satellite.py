@@ -285,7 +285,7 @@ class SatelliteBase:
         if not AudioChunk.is_type(event.type):
             await self.forward_event(event)
 
-    async def _send_run_pipeline(self, ask: Optional[bool] = False) -> None:
+    async def _send_run_pipeline(self, question_id: Optional[str] = None) -> None:
         """Sends a RunPipeline event with the correct stages."""
         if self.settings.wake.enabled:
             # Local wake word detection
@@ -303,7 +303,7 @@ class SatelliteBase:
             # No audio output
             end_stage = PipelineStage.HANDLE
 
-        if ask:
+        if question_id is not None:
             end_stage = PipelineStage.ASR
             restart_on_end = False
 
@@ -558,7 +558,7 @@ class SatelliteBase:
                     event.type
                 ):
                     await _disconnect()
-                    if not hasattr(event, 'wav'):
+                    if not hasattr(event, "wav"):
                         await self.trigger_played()
                     snd_client = None  # reconnect on next event
             except asyncio.CancelledError:
@@ -624,6 +624,7 @@ class SatelliteBase:
 
     async def event_from_wake(self, event: Event) -> None:
         """Called when an event is received from the wake service."""
+        _LOGGER.warning("Received an event from wake on unsupported satellite type")
 
     async def event_to_wake(self, event: Event) -> None:
         """Send event to the wake service."""
@@ -862,9 +863,11 @@ class SatelliteBase:
                     pending = set()
                     self._event_queue = asyncio.Queue()
 
-                    # Inform event service of the wake word handled by this satellite instance 
-                    await self.forward_event(Detect(names=self.settings.wake.names).event())
- 
+                    # Inform event service of the wake word handled by this satellite instance
+                    await self.forward_event(
+                        Detect(names=self.settings.wake.names).event()
+                    )
+
                 # Read/write in "parallel"
                 if to_client_task is None:
                     # From satellite to event service
@@ -1180,8 +1183,8 @@ class WakeStreamingSatellite(SatelliteBase):
         is_error = False
 
         if Detection.is_type(event.type):
-            if ((event.data.get("name") == "remote") or (event.data.get("name") == "ask")):
-                _LOGGER.debug("Detection called. Name: %s", event.data.get("name"))
+            if event.data.get("name") == "remote":
+                _LOGGER.debug("Remote trigger received from server. question_id: %s", event.data.get("question_id"))
                 # Remote request for Detection
                 await self.event_from_wake(event)
                 return
@@ -1309,7 +1312,7 @@ class WakeStreamingSatellite(SatelliteBase):
                 # No refractory period
                 self.refractory_timestamp.pop(detection.name, None)
 
-            await self._send_run_pipeline(event.data.get("name") == "ask")
+            await self._send_run_pipeline(event.data.get("question_id"))
             await self.forward_event(event)  # forward to event service
             await self.trigger_detection(Detection.from_event(event))
             await self.trigger_streaming_start()
