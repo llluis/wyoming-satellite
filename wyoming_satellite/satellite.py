@@ -78,6 +78,7 @@ class SatelliteBase:
 
         self.microphone_muted = False
         self._unmute_microphone_task: Optional[asyncio.Task] = None
+        self._speaker_volume = self.settings.snd.volume_multiplier
 
         # Debug audio recording
         self.wake_audio_writer: Optional[DebugAudioWriter] = None
@@ -539,8 +540,11 @@ class SatelliteBase:
                     await snd_client.connect()
                     _LOGGER.debug("Connected to snd service")
 
+                if "speaker_vol" in event.data:
+                    self._speaker_volume = float(event.data.get("speaker_vol"))
+
                 # Audio processing
-                if self.settings.snd.needs_processing and AudioChunk.is_type(
+                if self.settings.snd.enabled and self._speaker_volume != 1.0 and AudioChunk.is_type(
                     event.type
                 ):
                     chunk = AudioChunk.from_event(event)
@@ -574,9 +578,9 @@ class SatelliteBase:
 
     def _process_snd_audio(self, audio_bytes: bytes) -> bytes:
         """Perform audio pre-processing on snd output."""
-        if self.settings.snd.volume_multiplier != 1.0:
+        if self._speaker_volume != 1.0:
             audio_bytes = multiply_volume(
-                audio_bytes, self.settings.snd.volume_multiplier
+                audio_bytes, self._speaker_volume
             )
 
         return audio_bytes
