@@ -1,3 +1,13 @@
+# llluis' Wyoming Satellite
+
+This fork is not meant to be a replacement of the original Satellite.
+I'm just sharing the modifications I do for personal use and get as much as possible merged into the official satellite.
+Some of those modifications are just exploratory and may not end up integrated, however, the code pushed here is always working and reflects the version I use myself.
+
+This dev branch must be used with my custom version of the Wyoming Integration in Home Assistant.
+Easiest way is running it as a custom_component. It will override the original one.
+[HomeAssitant Custom Wyoming Integration](https://github.com/llluis/homeassistant-wyoming)
+
 # Wyoming Satellite
 
 Remote voice satellite using the [Wyoming protocol](https://github.com/rhasspy/wyoming).
