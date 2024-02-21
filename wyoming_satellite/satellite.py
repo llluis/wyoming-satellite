@@ -881,6 +881,14 @@ class SatelliteBase:
 
         return None
 
+    async def _send_event_detect(self) -> None:
+        """Inform event service of which wake words handled by this satellite instance."""
+        wake_names: Optional[List[str]] = None
+        if self.settings.wake.names:
+            wake_names = [w.name for w in self.settings.wake.names]
+
+        await self.forward_event(Detect(names=wake_names).event())
+
     async def _event_task_proc(self) -> None:
         """Event service loop."""
         event_client: Optional[AsyncClient] = None
@@ -910,9 +918,7 @@ class SatelliteBase:
                     self._event_queue = asyncio.Queue()
 
                     # Inform event service of the wake word handled by this satellite instance
-                    await self.forward_event(
-                        Detect(names=self.settings.wake.names).event()
-                    )
+                    await self._send_event_detect()
 
                 # Read/write in "parallel"
                 if to_client_task is None:
