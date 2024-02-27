@@ -1410,6 +1410,8 @@ class WakeStreamingSatellite(SatelliteBase):
 
             if self._wake_info is not None:
                 # Update wake info only
+                for index, wake_service in enumerate(self._wake_info.wake):
+                    self._wake_info.wake[index].installed = False
                 info.wake = self._wake_info.wake
         except asyncio.TimeoutError:
             _LOGGER.warning("Failed to get info from wake service")
